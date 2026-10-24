@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrackTime | Проверка надежности</title>
+    <style>
+        :root {
+            --bg: #0f1115;
+            --card-bg: #1a1d24;
+            --text: #ffffff;
+            --text-muted: #8b92a5;
+            --accent: #00e676; /* Неоново-зеленый акцент */
+            --c-red: #ff3b30;
+            --c-orange: #ff9500;
+            --c-yellow: #ffcc00;
+            --c-lgreen: #a3e635;
+            --c-green: #34c759;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 30px;
+        }
+        
+        /* Блок 1: Шапка */
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { margin: 0 0 5px 0; font-size: 28px; letter-spacing: 1px; }
+        .header p { margin: 0; color: var(--text-muted); font-size: 14px; }
+
+        /* Блок 2: Поле ввода */
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-group input {
+            width: 100%;
+            padding: 15px 45px 15px 15px;
+            background: var(--card-bg);
+            border: 1px solid #2a2f3a;
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        .input-group input:focus { border-color: var(--accent); }
+        .toggle-eye {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 18px;
+            user-select: none;
+            opacity: 0.7;
+        }
+
+        /* Блок 5: Доверие (До кнопки) */
+        .trust-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        /* Кнопка Анализ */
+        .analyze-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.1s;
+        }
+        .analyze-btn:hover { opacity: 0.9; }
+        .analyze-btn:active { transform: scale(0.98); }
+        .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Блок 3: Шкала и стрелка */
+        .chart-container {
+            display: none;
+            position: relative;
+            height: 160px;
+            margin-top: 30px;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #2a2f3a;
+        }
+        .bar {
+            width: 18%;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+        }
+        /* Высота и цвета столбиков */
+        .bar-1 { height: 20%; background: var(--c-red); }
+        .bar-2 { height: 40%; background: var(--c-orange); }
+        .bar-3 { height: 60%; background: var(--c-yellow); }
+        .bar-4 { height: 80%; background: var(--c-lgreen); }
+        .bar-5 { height: 100%; background: var(--c-green); }
+
+        /* Стрелка */
+        .arrow {
+            position: absolute;
+            bottom: 10px;
+            left: 10%;
+            font-size: 24px;
+            color: #fff;
+            transition: all 1s cubic-bezier(0.25, 1, 0.5, 1);
+            transform: translateX(-50%) rotate(-45deg);
+            opacity: 0;
+        }
+
+        /* Блок 4: Результат */
+        .result-container {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .result-time {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .result-rank { font-size: 14px; color: var(--text-muted); }
+        .result-rank span { color: var(--text); font-weight: bold; }
+
+        /* Блок 6: Футер */
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            padding: 20px 0;
+            border-top: 1px solid #2a2f3a;
+            line-height: 1.5;
+        }
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <div class="header">
+            <h1>CrackTime</h1>
+            <p>Проверь надежность своего пароля</p>
+        </div>
+
+        <!-- Поле ввода -->
+        <div class="input-group">
+            <input type="password" id="password" placeholder="введите пароль" autocomplete="off">
+            <span class="toggle-eye" onclick="togglePassword()">👁️</span>
+        </div>
+
+        <!-- Блок доверия -->
+        <div class="trust-text">
+            Данные конфиденциальны.<br>Вычисления происходят локально.
+        </div>
+
+        <!-- Кнопка -->
+        <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">[ АНАЛИЗ ]</button>
+
+        <!-- Шкала -->
+        <div class="chart-container" id="chart">
+            <div class="arrow" id="arrow">↗</div>
+            <div class="bar bar-1">КРАХ</div>
+            <div class="bar bar-2">СЛАБО</div>
+            <div class="bar bar-3">СРЕДНЕ</div>
+            <div class="bar bar-4">СЛОЖНО</div>
+            <div class="bar bar-5">НЕВОЗМОЖНО</div>
+        </div>
+
+        <!-- Результат -->
+        <div class="result-container" id="result">
+            <div class="result-time" id="timeText"></div>
+            <div class="result-rank">Твой ранг: <span id="rankText"></span></div>
+        </div>
+
+        <!-- Футер -->
+        <div class="footer">
+            Пароль — это база безопасности. Продвинутые методы защиты и анализа данных изучаем в моем Telegram.<br>
+            <a href="https://t.me/pythonwave" target="_blank">-> @pythonwave</a>
+        </div>
+    </div>
+
+    <script>
+        // Логика времени и рангов
+        const levels = [
+            { time: "10 СЕКУНД", rank: "[ ЧАЙНИК ]", color: "var(--c-red)", left: "10%", bottom: "20px" },
+            { time: "2 ЧАСА", rank: "[ ДЫРЯВЫЙ ]", color: "var(--c-orange)", left: "30%", bottom: "45px" },
+            { time: "3 МЕСЯЦА", rank: "[ БДИТЕЛЬНЫЙ ]", color: "var(--c-yellow)", left: "50%", bottom: "70px" },
+            { time: "50 ЛЕТ", rank: "[ АНОНИМ ]", color: "var(--c-lgreen)", left: "70%", bottom: "95px" },
+            { time: "13.8 МЛРД ЛЕТ", rank: "[ НЕСОКРУШИМЫЙ ]", color: "var(--c-green)", left: "90%", bottom: "120px" }
+        ];
+
+        function togglePassword() {
+            const input = document.getElementById('password');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function analyze() {
+            const pwd = document.getElementById('password').value;
+            const btn = document.getElementById('analyzeBtn');
+            const chart = document.getElementById('chart');
+            const result = document.getElementById('result');
+            const arrow = document.getElementById('arrow');
+            
+            if (!pwd) {
+                alert("Введите пароль для анализа");
+                return;
+            }
+
+            // Включаем анимацию загрузки
+            btn.disabled = true;
+            btn.textContent = "АНАЛИЗ...";
+            chart.style.display = "flex";
+            result.style.display = "none";
+            result.style.opacity = "0";
+            arrow.style.opacity = "0";
+            arrow.style.left = "0%"; 
+
+            // Подсчет очков сложности
+            let score = 0;
+            if (pwd.length > 8) score++;
+            if (pwd.length > 12) score++;
+            if (/[a-z]/.test(pwd)) score++;
+            if (/[A-Z]/.test(pwd)) score++;
+            if (/[0-9]/.test(pwd)) score++;
+            if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+            // Определение уровня
+            let levelIndex = 0;
+            if (score <= 1) levelIndex = 0;
+            else if (score === 2) levelIndex = 1;
+            else if (score <= 4) levelIndex = 2;
+            else if (score === 5) levelIndex = 3;
+            else levelIndex = 4;
+
+            const selectedLevel = levels[levelIndex];
+
+            // Задержка для эффекта "взлома"
+            setTimeout(() => {
+                // Двигаем стрелку
+                arrow.style.left = selectedLevel.left;
+                arrow.style.bottom = selectedLevel.bottom;
+                arrow.style.opacity = "1";
+
+                // Показываем результат
+                setTimeout(() => {
+                    document.getElementById('timeText').textContent = `ВРЕМЯ ВЗЛОМА: ${selectedLevel.time}`;
+                    document.getElementById('timeText').style.color = selectedLevel.color;
+                    
+                    document.getElementById('rankText').textContent = selectedLevel.rank;
+                    document.getElementById('rankText').style.color = selectedLevel.color;
+
+                    result.style.display = "block";
+                    void result.offsetWidth; 
+                    result.style.opacity = "1";
+
+                    btn.disabled = false;
+                    btn.textContent = "[ АНАЛИЗ ]";
+                }, 500); 
+            }, 800); 
+        }
+    </script>
+</body>
+  </html>
