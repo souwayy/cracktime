@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- 1. SEO ТЕГИ -->
     <title>CrackTime — узнай, за сколько взломают твой пароль</title>
     <meta name="description" content="Бесплатный локальный анализатор паролей. Узнай, сколько времени потребуется хакерам для взлома твоего пароля. Безопасно, без серверов.">
     <meta property="og:title" content="CrackTime | Проверь свой пароль">
@@ -12,8 +11,8 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://souwayy.github.io/cracktime/">
 
-    <!-- 2. ИКОНКА САЙТА (Разбитый замок) -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300e676' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2a4 4 0 0 0-4 4v2'/><path d='M16 6V4a4 4 0 0 0-4-4'/><rect x='4' y='8' width='16' height='12' rx='2'/><path d='M10 12l4 4M14 12l-4 4'/></svg>">
+    <!-- Иконка (Замок с трещиной) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300e676' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='11' width='18' height='11' rx='2'/><path d='M7 11V7a5 5 0 0 1 10 0v4'/><path d='M12 11v3l-2 2h3l-1 2v3'/></svg>">
 
     <style>
         :root {
@@ -76,9 +75,25 @@
             font-size: 12px;
             color: var(--text-muted);
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             line-height: 1.4;
         }
+
+        /* Новый блок статистики */
+        .stats-display {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            border: 1px solid #2a2f3a;
+        }
+        .stats-display div { flex: 1; text-align: center; }
+        .stats-display span { color: var(--text); font-weight: bold; display: block; margin-top: 4px; }
+        .stats-display .highlight { color: var(--accent); }
 
         .analyze-btn {
             width: 100%;
@@ -160,22 +175,41 @@
         .result-rank { font-size: 14px; color: var(--text-muted); margin-bottom: 15px;}
         .result-rank span { color: var(--text); font-weight: bold; }
 
-        /* 4. КНОПКА ПОДЕЛИТЬСЯ */
         .share-btn {
             display: none;
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px dashed var(--text-muted);
-            padding: 8px 15px;
-            border-radius: 6px;
+            background: rgba(0, 230, 118, 0.1);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 10px 20px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
+            font-weight: bold;
             transition: all 0.3s;
             margin: 0 auto;
         }
-        .share-btn:hover {
-            color: var(--accent);
-            border-color: var(--accent);
+        .share-btn:hover { background: var(--accent); color: #000; }
+
+        .new-record-banner {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 900;
+            font-size: 18px;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+        }
+        .new-record-banner.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
         }
 
         .footer {
@@ -205,6 +239,8 @@
     </style>
 </head>
 <body>
+    <div class="new-record-banner" id="recordBanner">🏆 НОВЫЙ РЕКОРД!</div>
+
     <div class="container">
         <div class="header">
             <h1>CrackTime</h1>
@@ -220,6 +256,13 @@
 
         <div class="trust-text">
             Данные конфиденциальны.<br>Вычисления происходят локально.
+        </div>
+
+        <!-- Блок статистики -->
+        <div class="stats-display">
+            <div>Попыток<span id="attemptsText" class="highlight">0</span></div>
+            <div>Твой рекорд<span id="bestRankText">-</span></div>
+            <div>Максимум<span>13.8 МЛРД</span></div>
         </div>
 
         <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">[ АНАЛИЗ ]</button>
@@ -245,7 +288,6 @@
     </div>
 
     <script>
-        // Настройки уровней (ранги)
         const levels = [
             { rank: "[ ЧАЙНИК ]", color: "var(--c-red)", barId: "bar1" },
             { rank: "[ ДЫРЯВЫЙ ]", color: "var(--c-orange)", barId: "bar2" },
@@ -259,6 +301,28 @@
 
         let currentRank = "";
         let currentTime = "";
+        
+        // Загружаем данные из памяти
+        let bestRankIndex = parseInt(localStorage.getItem('cracktime_best_rank'));
+        if (isNaN(bestRankIndex)) bestRankIndex = -1;
+
+        let attempts = parseInt(localStorage.getItem('cracktime_attempts'));
+        if (isNaN(attempts)) attempts = 0;
+
+        function updateStatsUI() {
+            // Обновляем счетчик попыток
+            document.getElementById('attemptsText').textContent = attempts;
+            
+            // Обновляем рекорд
+            if (bestRankIndex >= 0) {
+                const bestRankText = document.getElementById('bestRankText');
+                bestRankText.textContent = levels[bestRankIndex].rank;
+                bestRankText.style.color = levels[bestRankIndex].color;
+            }
+        }
+
+        // Показываем статистику при загрузке
+        window.onload = updateStatsUI;
 
         function togglePassword() {
             const input = document.getElementById('password');
@@ -272,14 +336,12 @@
             }
         }
 
-        // УМНАЯ МАТЕМАТИКА (Энтропия)
         function calculateSecurity(pwd) {
             if (pwd.length === 0) return { seconds: 0, level: 0 };
             
-            // Словарь популярных паролей
             const common = ["123456", "12345678", "qwerty", "password", "12345", "123456789", "admin", "123123", "qwerty123", "1q2w3e", "qwertyuiop", "qazwsx", "1234567890"];
             if (common.includes(pwd.toLowerCase())) {
-                return { seconds: 1, level: 0 }; // Чайник
+                return { seconds: 1, level: 0 };
             }
 
             let poolSize = 0;
@@ -287,9 +349,8 @@
             if (/[A-Z]/.test(pwd)) poolSize += 26;
             if (/[0-9]/.test(pwd)) poolSize += 10;
             if (/[^A-Za-z0-9]/.test(pwd)) poolSize += 33;
-            if (/[а-яА-Я]/.test(pwd)) poolSize += 33; // Русские буквы
+            if (/[а-яА-Я]/.test(pwd)) poolSize += 33;
 
-            // Штраф за повторения и последовательности
             let repeats = 0;
             let sequences = 0;
             for (let i = 1; i < pwd.length; i++) {
@@ -301,21 +362,18 @@
             entropy -= (repeats * 2) + (sequences * 2);
             if (entropy < 0) entropy = 0;
 
-            // 10 млрд попыток в секунду
             let guesses = Math.pow(2, entropy);
             let seconds = guesses / 10000000000; 
 
-            // Определение ранга по секундам
             let level = 0;
-            if (seconds > 60) level = 1;                 // > 1 мин
-            if (seconds > 86400) level = 2;              // > 24 часов
-            if (seconds > 31536000) level = 3;           // > 1 года
-            if (seconds > 31536000000) level = 4;        // > 1000 лет
+            if (seconds > 60) level = 1;
+            if (seconds > 86400) level = 2;
+            if (seconds > 31536000) level = 3;
+            if (seconds > 31536000000) level = 4;
 
             return { seconds: seconds, level: level };
         }
 
-        // Красивое форматирование времени
         function formatTime(seconds) {
             if (seconds < 1) return "МГНОВЕННО";
             if (seconds < 60) return `${Math.round(seconds)} СЕКУНД`;
@@ -381,7 +439,26 @@
                         void result.offsetWidth; 
                         result.style.opacity = "1";
                         
-                        shareBtn.style.display = "inline-block";
+                        shareBtn.style.display = "block";
+
+                        // УВЕЛИЧИВАЕМ СЧЕТЧИК ПОПЫТОК
+                        attempts++;
+                        localStorage.setItem('cracktime_attempts', attempts);
+
+                        // ПРОВЕРКА РЕКОРДА
+                        if (calc.level > bestRankIndex) {
+                            bestRankIndex = calc.level;
+                            localStorage.setItem('cracktime_best_rank', bestRankIndex);
+                            
+                            const banner = document.getElementById('recordBanner');
+                            banner.classList.add('show');
+                            setTimeout(() => {
+                                banner.classList.remove('show');
+                            }, 2500); 
+                        }
+
+                        // Обновляем блок статистики
+                        updateStatsUI();
 
                         btn.disabled = false;
                         btn.textContent = "[ АНАЛИЗ ]";
@@ -390,7 +467,6 @@
             }, 200);
         }
 
-        // ПОДЕЛИТЬСЯ РЕЗУЛЬТАТОМ
         function shareResult() {
             const text = `Мой ранг в CrackTime: ${currentRank}. А какой уровень защиты у твоего пароля?`;
             const url = "https://souwayy.github.io/cracktime/";
@@ -408,4 +484,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
