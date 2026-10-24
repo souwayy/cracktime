@@ -30,12 +30,10 @@
         }
         .container { width: 100%; max-width: 400px; margin-top: 30px; }
         
-        /* Шапка */
         .header { text-align: center; margin-bottom: 30px; }
         .header h1 { margin: 0 0 5px 0; font-size: 28px; letter-spacing: 1px; }
         .header p { margin: 0; color: var(--text-muted); font-size: 14px; }
 
-        /* Поле ввода */
         .input-group { position: relative; margin-bottom: 15px; }
         .input-group input {
             width: 100%;
@@ -50,7 +48,6 @@
         }
         .input-group input:focus { border-color: var(--accent); }
         
-        /* Иконка глаза */
         .eye-icon {
             position: absolute;
             right: 15px;
@@ -64,7 +61,6 @@
         }
         .eye-icon:hover { fill: var(--text); }
 
-        /* Текст доверия */
         .trust-text {
             font-size: 12px;
             color: var(--text-muted);
@@ -73,7 +69,6 @@
             line-height: 1.4;
         }
 
-        /* Кнопка Анализ */
         .analyze-btn {
             width: 100%;
             padding: 15px;
@@ -90,7 +85,6 @@
         .analyze-btn:active { transform: scale(0.98); }
         .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Контейнер графика */
         .chart-container {
             display: none;
             position: relative;
@@ -102,7 +96,6 @@
             border-bottom: 2px solid #2a2f3a;
         }
         
-        /* Столбики */
         .bar {
             width: 18%;
             border-radius: 6px 6px 0 0;
@@ -123,19 +116,18 @@
         .bar-4 { height: 80%; background: var(--c-lgreen); }
         .bar-5 { height: 100%; background: var(--c-green); }
 
-        /* SVG Слой для стрелки */
+        /* Слой для стрелки */
         .arrow-svg {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Чтобы не мешала нажимать */
+            pointer-events: none;
             z-index: 10;
             overflow: visible;
         }
 
-        /* Сама линия стрелки */
         #arrowLine {
             stroke: var(--accent);
             stroke-width: 4;
@@ -144,7 +136,6 @@
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Результат */
         .result-container {
             display: none;
             text-align: center;
@@ -156,7 +147,6 @@
         .result-rank { font-size: 14px; color: var(--text-muted); }
         .result-rank span { color: var(--text); font-weight: bold; }
 
-        /* Футер */
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -204,15 +194,12 @@
         <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">[ АНАЛИЗ ]</button>
 
         <div class="chart-container" id="chart">
-            <!-- SVG для длинной стрелки -->
             <svg class="arrow-svg" id="arrowSvg">
                 <defs>
-                    <!-- Наконечник стрелки -->
                     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
                         <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)" />
                     </marker>
                 </defs>
-                <!-- Линия (хвост будет в начале, конец с наконечником) -->
                 <line id="arrowLine" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowhead)" />
             </svg>
 
@@ -276,14 +263,12 @@
             result.style.display = "none";
             result.style.opacity = "0";
             
-            // Прячем линию (сжимаем в точку в начале)
             arrowLine.style.opacity = "0";
             arrowLine.setAttribute('x1', '0');
             arrowLine.setAttribute('y1', '0');
             arrowLine.setAttribute('x2', '0');
             arrowLine.setAttribute('y2', '0');
 
-            // Подсчет сложности
             let score = 0;
             if (pwd.length > 8) score++;
             if (pwd.length > 12) score++;
@@ -301,20 +286,17 @@
 
             const selectedLevel = levels[levelIndex];
             const targetBar = document.getElementById(selectedLevel.barId);
-            const firstBar = document.getElementById('bar1');
 
-            // Ждем немного для эффекта
             setTimeout(() => {
                 arrowLine.style.opacity = "1";
                 
-                // Вычисляем координаты
-                // Хвост стрелки: низ первого столбика
-                const startX = firstBar.offsetLeft + (firstBar.offsetWidth / 2);
-                const startY = chart.offsetHeight - 10; // Чуть выше нижней линии
+                // НОВЫЕ КООРДИНАТЫ: Хвост стрелки выносим в самый левый нижний угол графика
+                const startX = 0; 
+                const startY = chart.offsetHeight - 5; 
 
-                // Острие стрелки: верх нужного столбика
+                // Кончик стрелки указывает на верх нужного столбика
                 const endX = targetBar.offsetLeft + (targetBar.offsetWidth / 2);
-                const endY = targetBar.offsetTop - 10; // Чуть выше столбика, чтобы не перекрывать
+                const endY = targetBar.offsetTop - 10; 
 
                 // Устанавливаем координаты для линии
                 arrowLine.setAttribute('x1', startX);
@@ -322,7 +304,6 @@
                 arrowLine.setAttribute('x2', endX);
                 arrowLine.setAttribute('y2', endY);
 
-                // Показываем результат
                 setTimeout(() => {
                     document.getElementById('timeText').textContent = `ВРЕМЯ ВЗЛОМА: ${selectedLevel.time}`;
                     document.getElementById('timeText').style.color = selectedLevel.color;
