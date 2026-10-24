@@ -108,7 +108,7 @@
             writing-mode: vertical-rl;
             text-orientation: mixed;
             transform: rotate(180deg);
-            z-index: 1; /* Столбики на заднем плане */
+            z-index: 1;
         }
         
         .bar-1 { height: 20%; background: var(--c-red); }
@@ -117,7 +117,6 @@
         .bar-4 { height: 80%; background: var(--c-lgreen); }
         .bar-5 { height: 100%; background: var(--c-green); }
 
-        /* SVG Слой для стрелки */
         .arrow-svg {
             position: absolute;
             top: 0;
@@ -125,11 +124,10 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 10; /* Стрелка поверх столбиков */
+            z-index: 10;
             overflow: visible;
         }
 
-        /* Прямая линия */
         #arrowLine {
             stroke: var(--accent);
             stroke-width: 4;
@@ -139,7 +137,6 @@
             opacity: 0;
         }
 
-        /* Наконечник стрелки (используем маркер для автоповорота) */
         .arrow-head {
             fill: var(--accent);
             filter: drop-shadow(0 0 6px var(--accent));
@@ -272,7 +269,6 @@
             result.style.display = "none";
             result.style.opacity = "0";
             
-            // Скрываем стрелку перед стартом
             arrowLine.style.opacity = "0";
             arrowLine.setAttribute('x1', '0');
             arrowLine.setAttribute('y1', '0');
@@ -296,20 +292,27 @@
 
             const selectedLevel = levels[levelIndex];
             const targetBar = document.getElementById(selectedLevel.barId);
+            const lastBar = document.getElementById('bar5');
 
             setTimeout(() => {
                 arrowLine.style.opacity = "1";
                 
-                // Старт: строго слева от первого столбика (на уровне земли)
+                // Начало стрелки (левый нижний угол)
                 const startX = 10; 
                 const startY = chart.offsetHeight - 20; 
 
-                // Конец: строго над выбранным столбиком (чуть выше его верхушки)
-                const endX = targetBar.offsetLeft + (targetBar.offsetWidth / 2);
-                // Если это последний столбик (100% высоты), стрелка улетит чуть выше графика
-                const endY = targetBar.offsetTop - 15; 
+                // Вычисляем идеальный наклон на основе самой высокой точки (верх последнего столбика)
+                const maxX = lastBar.offsetLeft + (lastBar.offsetWidth / 2);
+                const maxY = lastBar.offsetTop - 15; // Чуть выше последнего столбика
 
-                // Устанавливаем координаты для прямой линии
+                const slope = (maxY - startY) / (maxX - startX);
+
+                // Конец стрелки (середина нужного столбика)
+                const endX = targetBar.offsetLeft + (targetBar.offsetWidth / 2);
+                // Вычисляем Y по нашей прямой линии
+                const endY = startY + (endX - startX) * slope;
+
+                // Устанавливаем координаты
                 arrowLine.setAttribute('x1', startX);
                 arrowLine.setAttribute('y1', startY);
                 arrowLine.setAttribute('x2', endX);
