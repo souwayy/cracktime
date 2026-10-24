@@ -50,7 +50,7 @@
         }
         .input-group input:focus { border-color: var(--accent); }
         
-        /* Иконка глаза (SVG вместо эмодзи) */
+        /* Иконка глаза */
         .eye-icon {
             position: absolute;
             right: 15px;
@@ -90,11 +90,11 @@
         .analyze-btn:active { transform: scale(0.98); }
         .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* График */
+        /* Контейнер графика */
         .chart-container {
             display: none;
             position: relative;
-            height: 180px;
+            height: 200px;
             margin-top: 40px;
             align-items: flex-end;
             justify-content: space-between;
@@ -102,6 +102,7 @@
             border-bottom: 2px solid #2a2f3a;
         }
         
+        /* Столбики */
         .bar {
             width: 18%;
             border-radius: 6px 6px 0 0;
@@ -122,20 +123,28 @@
         .bar-4 { height: 80%; background: var(--c-lgreen); }
         .bar-5 { height: 100%; background: var(--c-green); }
 
-        /* Диагональная стрелка (SVG) */
-        .arrow {
+        /* SVG Слой для стрелки */
+        .arrow-svg {
             position: absolute;
-            width: 40px;
-            height: 40px;
-            opacity: 0;
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            filter: drop-shadow(0 0 8px var(--accent));
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Чтобы не мешала нажимать */
             z-index: 10;
-            /* Смещение, чтобы острие стрелки смотрело точно в угол столбика */
-            transform: translate(-50%, -100%); 
+            overflow: visible;
         }
 
-        /* Блок результата */
+        /* Сама линия стрелки */
+        #arrowLine {
+            stroke: var(--accent);
+            stroke-width: 4;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 6px var(--accent));
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Результат */
         .result-container {
             display: none;
             text-align: center;
@@ -158,7 +167,6 @@
             line-height: 1.5;
         }
         
-        /* Минималистичная кнопка Telegram (без эмодзи) */
         .tg-btn {
             display: inline-block;
             margin-top: 15px;
@@ -172,41 +180,40 @@
             font-size: 14px;
             transition: all 0.3s;
         }
-        .tg-btn:hover {
-            background: rgba(0, 230, 118, 0.1);
-        }
+        .tg-btn:hover { background: rgba(0, 230, 118, 0.1); }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Шапка -->
         <div class="header">
             <h1>CrackTime</h1>
             <p>Проверь надежность своего пароля</p>
         </div>
 
-        <!-- Поле ввода -->
         <div class="input-group">
             <input type="password" id="password" placeholder="введите пароль" autocomplete="off">
-            <!-- SVG иконка глаза -->
             <svg class="eye-icon" id="eyeIcon" onclick="togglePassword()" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
             </svg>
         </div>
 
-        <!-- Блок доверия -->
         <div class="trust-text">
             Данные конфиденциальны.<br>Вычисления происходят локально.
         </div>
 
-        <!-- Кнопка -->
         <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">[ АНАЛИЗ ]</button>
 
-        <!-- График -->
         <div class="chart-container" id="chart">
-            <!-- SVG Стрелка -->
-            <svg class="arrow" id="arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 20L20 4M20 4H8M20 4V16" stroke="#00e676" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- SVG для длинной стрелки -->
+            <svg class="arrow-svg" id="arrowSvg">
+                <defs>
+                    <!-- Наконечник стрелки -->
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)" />
+                    </marker>
+                </defs>
+                <!-- Линия (хвост будет в начале, конец с наконечником) -->
+                <line id="arrowLine" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowhead)" />
             </svg>
 
             <div class="bar bar-1" id="bar1">КРАХ</div>
@@ -216,13 +223,11 @@
             <div class="bar bar-5" id="bar5">НЕВОЗМОЖНО</div>
         </div>
 
-        <!-- Результат -->
         <div class="result-container" id="result">
             <div class="result-time" id="timeText"></div>
             <div class="result-rank">Твой ранг: <span id="rankText"></span></div>
         </div>
 
-        <!-- Футер -->
         <div class="footer">
             Пароль — это база безопасности. Продвинутые методы защиты и анализа данных изучаем в моем Telegram.<br>
             <a href="https://t.me/pythonwave" target="_blank" class="tg-btn">Перейти в Telegram</a>
@@ -230,7 +235,6 @@
     </div>
 
     <script>
-        // Данные уровней
         const levels = [
             { time: "10 СЕКУНД", rank: "[ ЧАЙНИК ]", color: "var(--c-red)", barId: "bar1" },
             { time: "2 ЧАСА", rank: "[ ДЫРЯВЫЙ ]", color: "var(--c-orange)", barId: "bar2" },
@@ -239,7 +243,6 @@
             { time: "13.8 МЛРД ЛЕТ", rank: "[ НЕСОКРУШИМЫЙ ]", color: "var(--c-green)", barId: "bar5" }
         ];
 
-        // Иконки глаза (открытый/закрытый)
         const eyeOpen = "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z";
         const eyeClosed = "M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z";
 
@@ -260,7 +263,7 @@
             const btn = document.getElementById('analyzeBtn');
             const chart = document.getElementById('chart');
             const result = document.getElementById('result');
-            const arrow = document.getElementById('arrow');
+            const arrowLine = document.getElementById('arrowLine');
             
             if (!pwd) {
                 alert("Введите пароль для анализа");
@@ -273,12 +276,14 @@
             result.style.display = "none";
             result.style.opacity = "0";
             
-            // Прячем стрелку в левый нижний угол перед стартом
-            arrow.style.opacity = "0";
-            arrow.style.left = "10px"; 
-            arrow.style.top = "160px"; 
+            // Прячем линию (сжимаем в точку в начале)
+            arrowLine.style.opacity = "0";
+            arrowLine.setAttribute('x1', '0');
+            arrowLine.setAttribute('y1', '0');
+            arrowLine.setAttribute('x2', '0');
+            arrowLine.setAttribute('y2', '0');
 
-            // Логика оценки
+            // Подсчет сложности
             let score = 0;
             if (pwd.length > 8) score++;
             if (pwd.length > 12) score++;
@@ -296,17 +301,28 @@
 
             const selectedLevel = levels[levelIndex];
             const targetBar = document.getElementById(selectedLevel.barId);
+            const firstBar = document.getElementById('bar1');
 
+            // Ждем немного для эффекта
             setTimeout(() => {
-                arrow.style.opacity = "1";
+                arrowLine.style.opacity = "1";
                 
-                // Высчитываем точную позицию стрелки относительно нужного столбика
-                const barLeft = targetBar.offsetLeft + (targetBar.offsetWidth / 2);
-                const barTop = targetBar.offsetTop - 10; // Чуть выше столбика
+                // Вычисляем координаты
+                // Хвост стрелки: низ первого столбика
+                const startX = firstBar.offsetLeft + (firstBar.offsetWidth / 2);
+                const startY = chart.offsetHeight - 10; // Чуть выше нижней линии
 
-                arrow.style.left = barLeft + "px";
-                arrow.style.top = barTop + "px";
+                // Острие стрелки: верх нужного столбика
+                const endX = targetBar.offsetLeft + (targetBar.offsetWidth / 2);
+                const endY = targetBar.offsetTop - 10; // Чуть выше столбика, чтобы не перекрывать
 
+                // Устанавливаем координаты для линии
+                arrowLine.setAttribute('x1', startX);
+                arrowLine.setAttribute('y1', startY);
+                arrowLine.setAttribute('x2', endX);
+                arrowLine.setAttribute('y2', endY);
+
+                // Показываем результат
                 setTimeout(() => {
                     document.getElementById('timeText').textContent = `ВРЕМЯ ВЗЛОМА: ${selectedLevel.time}`;
                     document.getElementById('timeText').style.color = selectedLevel.color;
@@ -321,7 +337,7 @@
                     btn.disabled = false;
                     btn.textContent = "[ АНАЛИЗ ]";
                 }, 600); 
-            }, 500); 
+            }, 300); 
         }
     </script>
 </body>
