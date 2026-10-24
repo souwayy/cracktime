@@ -108,6 +108,7 @@
             writing-mode: vertical-rl;
             text-orientation: mixed;
             transform: rotate(180deg);
+            z-index: 1; /* Столбики на заднем плане */
         }
         
         .bar-1 { height: 20%; background: var(--c-red); }
@@ -124,18 +125,24 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 10;
+            z-index: 10; /* Стрелка поверх столбиков */
             overflow: visible;
         }
 
-        /* Сама линия (теперь это path для изгиба) */
-        #arrowPath {
+        /* Прямая линия */
+        #arrowLine {
             stroke: var(--accent);
             stroke-width: 4;
             stroke-linecap: round;
-            fill: none;
             filter: drop-shadow(0 0 6px var(--accent));
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        /* Наконечник стрелки (используем маркер для автоповорота) */
+        .arrow-head {
+            fill: var(--accent);
+            filter: drop-shadow(0 0 6px var(--accent));
         }
 
         .result-container {
@@ -198,12 +205,11 @@
         <div class="chart-container" id="chart">
             <svg class="arrow-svg" id="arrowSvg">
                 <defs>
-                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)" />
+                    <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                        <polygon points="0 0, 10 5, 0 10" class="arrow-head" />
                     </marker>
                 </defs>
-                <!-- Изогнутая линия -->
-                <path id="arrowPath" />
+                <line id="arrowLine" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowHead)" />
             </svg>
 
             <div class="bar bar-1" id="bar1">КРАХ</div>
@@ -253,7 +259,7 @@
             const btn = document.getElementById('analyzeBtn');
             const chart = document.getElementById('chart');
             const result = document.getElementById('result');
-            const arrowPath = document.getElementById('arrowPath');
+            const arrowLine = document.getElementById('arrowLine');
             
             if (!pwd) {
                 alert("Введите пароль для анализа");
@@ -266,9 +272,12 @@
             result.style.display = "none";
             result.style.opacity = "0";
             
-            // Сбрасываем стрелку
-            arrowPath.style.opacity = "0";
-            arrowPath.setAttribute('d', '');
+            // Скрываем стрелку перед стартом
+            arrowLine.style.opacity = "0";
+            arrowLine.setAttribute('x1', '0');
+            arrowLine.setAttribute('y1', '0');
+            arrowLine.setAttribute('x2', '0');
+            arrowLine.setAttribute('y2', '0');
 
             let score = 0;
             if (pwd.length > 8) score++;
@@ -289,23 +298,22 @@
             const targetBar = document.getElementById(selectedLevel.barId);
 
             setTimeout(() => {
-                arrowPath.style.opacity = "1";
+                arrowLine.style.opacity = "1";
                 
-                // Хвост стрелки (левый нижний угол)
+                // Старт: строго слева от первого столбика (на уровне земли)
                 const startX = 10; 
                 const startY = chart.offsetHeight - 20; 
 
-                // Острие (над нужным столбиком)
+                // Конец: строго над выбранным столбиком (чуть выше его верхушки)
                 const endX = targetBar.offsetLeft + (targetBar.offsetWidth / 2);
-                const endY = targetBar.offsetTop - 20; 
+                // Если это последний столбик (100% высоты), стрелка улетит чуть выше графика
+                const endY = targetBar.offsetTop - 15; 
 
-                // Управляющая точка для изгиба (чтобы стрелка летела поверх столбиков)
-                const controlX = (startX + endX) / 2;
-                const controlY = endY - 30; // Изгиб вверх
-
-                // Рисуем кривую
-                const pathD = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
-                arrowPath.setAttribute('d', pathD);
+                // Устанавливаем координаты для прямой линии
+                arrowLine.setAttribute('x1', startX);
+                arrowLine.setAttribute('y1', startY);
+                arrowLine.setAttribute('x2', endX);
+                arrowLine.setAttribute('y2', endY);
 
                 setTimeout(() => {
                     document.getElementById('timeText').textContent = `ВРЕМЯ ВЗЛОМА: ${selectedLevel.time}`;
