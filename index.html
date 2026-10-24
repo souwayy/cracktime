@@ -11,7 +11,6 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://souwayy.github.io/cracktime/">
 
-    <!-- Иконка (Замок с трещиной) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300e676' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='11' width='18' height='11' rx='2'/><path d='M7 11V7a5 5 0 0 1 10 0v4'/><path d='M12 11v3l-2 2h3l-1 2v3'/></svg>">
 
     <style>
@@ -79,7 +78,7 @@
             line-height: 1.4;
         }
 
-        /* Новый блок статистики */
+        /* Блок статистики */
         .stats-display {
             display: flex;
             justify-content: space-between;
@@ -92,7 +91,7 @@
             border: 1px solid #2a2f3a;
         }
         .stats-display div { flex: 1; text-align: center; }
-        .stats-display span { color: var(--text); font-weight: bold; display: block; margin-top: 4px; }
+        .stats-display span { color: var(--text); font-weight: bold; display: block; margin-top: 4px; font-size: 12px;}
         .stats-display .highlight { color: var(--accent); }
 
         .analyze-btn {
@@ -258,10 +257,9 @@
             Данные конфиденциальны.<br>Вычисления происходят локально.
         </div>
 
-        <!-- Блок статистики -->
         <div class="stats-display">
             <div>Попыток<span id="attemptsText" class="highlight">0</span></div>
-            <div>Твой рекорд<span id="bestRankText">-</span></div>
+            <div>Твой рекорд<span id="bestTimeText">-</span></div>
             <div>Максимум<span>13.8 МЛРД</span></div>
         </div>
 
@@ -302,26 +300,31 @@
         let currentRank = "";
         let currentTime = "";
         
-        // Загружаем данные из памяти
-        let bestRankIndex = parseInt(localStorage.getItem('cracktime_best_rank'));
-        if (isNaN(bestRankIndex)) bestRankIndex = -1;
+        // Загружаем данные из памяти (ТЕПЕРЬ ХРАНИМ СЕКУНДЫ)
+        let bestSeconds = parseFloat(localStorage.getItem('cracktime_best_seconds'));
+        if (isNaN(bestSeconds)) bestSeconds = -1;
 
         let attempts = parseInt(localStorage.getItem('cracktime_attempts'));
         if (isNaN(attempts)) attempts = 0;
 
         function updateStatsUI() {
-            // Обновляем счетчик попыток
             document.getElementById('attemptsText').textContent = attempts;
             
-            // Обновляем рекорд
-            if (bestRankIndex >= 0) {
-                const bestRankText = document.getElementById('bestRankText');
-                bestRankText.textContent = levels[bestRankIndex].rank;
-                bestRankText.style.color = levels[bestRankIndex].color;
+            if (bestSeconds >= 0) {
+                const bestTimeText = document.getElementById('bestTimeText');
+                // Форматируем сохраненные секунды в красивую строку
+                bestTimeText.textContent = formatTime(bestSeconds);
+                
+                // Красим в цвет соответствующего ранга
+                let level = 0;
+                if (bestSeconds > 60) level = 1;
+                if (bestSeconds > 86400) level = 2;
+                if (bestSeconds > 31536000) level = 3;
+                if (bestSeconds > 31536000000) level = 4;
+                bestTimeText.style.color = levels[level].color;
             }
         }
 
-        // Показываем статистику при загрузке
         window.onload = updateStatsUI;
 
         function togglePassword() {
@@ -376,11 +379,11 @@
 
         function formatTime(seconds) {
             if (seconds < 1) return "МГНОВЕННО";
-            if (seconds < 60) return `${Math.round(seconds)} СЕКУНД`;
-            if (seconds < 3600) return `${Math.round(seconds / 60)} МИНУТ`;
-            if (seconds < 86400) return `${Math.round(seconds / 3600)} ЧАСОВ`;
-            if (seconds < 2592000) return `${Math.round(seconds / 86400)} ДНЕЙ`;
-            if (seconds < 31536000) return `${Math.round(seconds / 2592000)} МЕСЯЦЕВ`;
+            if (seconds < 60) return `${Math.round(seconds)} СЕК`;
+            if (seconds < 3600) return `${Math.round(seconds / 60)} МИН`;
+            if (seconds < 86400) return `${Math.round(seconds / 3600)} ЧАС`;
+            if (seconds < 2592000) return `${Math.round(seconds / 86400)} ДН`;
+            if (seconds < 31536000) return `${Math.round(seconds / 2592000)} МЕС`;
             
             let years = Math.round(seconds / 31536000);
             if (years > 1000000000) return "13.8 МЛРД ЛЕТ";
@@ -441,14 +444,13 @@
                         
                         shareBtn.style.display = "block";
 
-                        // УВЕЛИЧИВАЕМ СЧЕТЧИК ПОПЫТОК
                         attempts++;
                         localStorage.setItem('cracktime_attempts', attempts);
 
-                        // ПРОВЕРКА РЕКОРДА
-                        if (calc.level > bestRankIndex) {
-                            bestRankIndex = calc.level;
-                            localStorage.setItem('cracktime_best_rank', bestRankIndex);
+                        // ПРОВЕРКА РЕКОРДА (сравниваем секунды)
+                        if (calc.seconds > bestSeconds) {
+                            bestSeconds = calc.seconds;
+                            localStorage.setItem('cracktime_best_seconds', bestSeconds);
                             
                             const banner = document.getElementById('recordBanner');
                             banner.classList.add('show');
@@ -457,7 +459,6 @@
                             }, 2500); 
                         }
 
-                        // Обновляем блок статистики
                         updateStatsUI();
 
                         btn.disabled = false;
@@ -484,4 +485,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
