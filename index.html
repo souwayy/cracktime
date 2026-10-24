@@ -116,7 +116,7 @@
         .bar-4 { height: 80%; background: var(--c-lgreen); }
         .bar-5 { height: 100%; background: var(--c-green); }
 
-        /* Слой для стрелки */
+        /* SVG Слой для стрелки */
         .arrow-svg {
             position: absolute;
             top: 0;
@@ -128,10 +128,12 @@
             overflow: visible;
         }
 
-        #arrowLine {
+        /* Сама линия (теперь это path для изгиба) */
+        #arrowPath {
             stroke: var(--accent);
             stroke-width: 4;
             stroke-linecap: round;
+            fill: none;
             filter: drop-shadow(0 0 6px var(--accent));
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -200,7 +202,8 @@
                         <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)" />
                     </marker>
                 </defs>
-                <line id="arrowLine" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowhead)" />
+                <!-- Изогнутая линия -->
+                <path id="arrowPath" />
             </svg>
 
             <div class="bar bar-1" id="bar1">КРАХ</div>
@@ -250,7 +253,7 @@
             const btn = document.getElementById('analyzeBtn');
             const chart = document.getElementById('chart');
             const result = document.getElementById('result');
-            const arrowLine = document.getElementById('arrowLine');
+            const arrowPath = document.getElementById('arrowPath');
             
             if (!pwd) {
                 alert("Введите пароль для анализа");
@@ -263,11 +266,9 @@
             result.style.display = "none";
             result.style.opacity = "0";
             
-            arrowLine.style.opacity = "0";
-            arrowLine.setAttribute('x1', '0');
-            arrowLine.setAttribute('y1', '0');
-            arrowLine.setAttribute('x2', '0');
-            arrowLine.setAttribute('y2', '0');
+            // Сбрасываем стрелку
+            arrowPath.style.opacity = "0";
+            arrowPath.setAttribute('d', '');
 
             let score = 0;
             if (pwd.length > 8) score++;
@@ -288,21 +289,23 @@
             const targetBar = document.getElementById(selectedLevel.barId);
 
             setTimeout(() => {
-                arrowLine.style.opacity = "1";
+                arrowPath.style.opacity = "1";
                 
-                // НОВЫЕ КООРДИНАТЫ: Хвост стрелки выносим в самый левый нижний угол графика
-                const startX = 0; 
-                const startY = chart.offsetHeight - 5; 
+                // Хвост стрелки (левый нижний угол)
+                const startX = 10; 
+                const startY = chart.offsetHeight - 20; 
 
-                // Кончик стрелки указывает на верх нужного столбика
+                // Острие (над нужным столбиком)
                 const endX = targetBar.offsetLeft + (targetBar.offsetWidth / 2);
-                const endY = targetBar.offsetTop - 10; 
+                const endY = targetBar.offsetTop - 20; 
 
-                // Устанавливаем координаты для линии
-                arrowLine.setAttribute('x1', startX);
-                arrowLine.setAttribute('y1', startY);
-                arrowLine.setAttribute('x2', endX);
-                arrowLine.setAttribute('y2', endY);
+                // Управляющая точка для изгиба (чтобы стрелка летела поверх столбиков)
+                const controlX = (startX + endX) / 2;
+                const controlY = endY - 30; // Изгиб вверх
+
+                // Рисуем кривую
+                const pathD = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
+                arrowPath.setAttribute('d', pathD);
 
                 setTimeout(() => {
                     document.getElementById('timeText').textContent = `ВРЕМЯ ВЗЛОМА: ${selectedLevel.time}`;
