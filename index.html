@@ -117,6 +117,7 @@
         .bar-4 { height: 80%; background: var(--c-lgreen); }
         .bar-5 { height: 100%; background: var(--c-green); }
 
+        /* Слой для стрелки поверх всего */
         .arrow-svg {
             position: absolute;
             top: 0;
@@ -128,6 +129,7 @@
             overflow: visible;
         }
 
+        /* Сама линия */
         #arrowLine {
             stroke: var(--accent);
             stroke-width: 4;
@@ -137,11 +139,7 @@
             opacity: 0;
         }
 
-        .arrow-head {
-            fill: var(--accent);
-            filter: drop-shadow(0 0 6px var(--accent));
-        }
-
+        /* Результат */
         .result-container {
             display: none;
             text-align: center;
@@ -202,8 +200,9 @@
         <div class="chart-container" id="chart">
             <svg class="arrow-svg" id="arrowSvg">
                 <defs>
-                    <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-                        <polygon points="0 0, 10 5, 0 10" class="arrow-head" />
+                    <!-- Железобетонный наконечник: markerUnits="userSpaceOnUse" не дает ему меняться в размере -->
+                    <marker id="arrowHead" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+                        <path d="M0,0 L12,6 L0,12 Z" fill="var(--accent)" />
                     </marker>
                 </defs>
                 <line id="arrowLine" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowHead)" />
@@ -270,10 +269,6 @@
             result.style.opacity = "0";
             
             arrowLine.style.opacity = "0";
-            arrowLine.setAttribute('x1', '0');
-            arrowLine.setAttribute('y1', '0');
-            arrowLine.setAttribute('x2', '0');
-            arrowLine.setAttribute('y2', '0');
 
             let score = 0;
             if (pwd.length > 8) score++;
@@ -297,22 +292,23 @@
             setTimeout(() => {
                 arrowLine.style.opacity = "1";
                 
-                // Начало стрелки (левый нижний угол)
-                const startX = 10; 
-                const startY = chart.offsetHeight - 20; 
+                // 1. Начало (всегда в левом нижнем углу)
+                const startX = 5; 
+                const startY = chart.offsetHeight - 15; 
 
-                // Вычисляем идеальный наклон на основе самой высокой точки (верх последнего столбика)
+                // 2. Конец (всегда над самым высоким столбиком - чтобы вычислить идеальный угол)
                 const maxX = lastBar.offsetLeft + (lastBar.offsetWidth / 2);
-                const maxY = lastBar.offsetTop - 15; // Чуть выше последнего столбика
+                const maxY = lastBar.offsetTop - 20; 
 
+                // 3. Вычисляем угол наклона этой воображаемой линии
                 const slope = (maxY - startY) / (maxX - startX);
 
-                // Конец стрелки (середина нужного столбика)
+                // 4. Вычисляем, где стрелка должна остановиться (над нужным столбиком)
                 const endX = targetBar.offsetLeft + (targetBar.offsetWidth / 2);
-                // Вычисляем Y по нашей прямой линии
+                // Вычисляем Y по формуле прямой (y = kx + b)
                 const endY = startY + (endX - startX) * slope;
 
-                // Устанавливаем координаты
+                // 5. Рисуем
                 arrowLine.setAttribute('x1', startX);
                 arrowLine.setAttribute('y1', startY);
                 arrowLine.setAttribute('x2', endX);
